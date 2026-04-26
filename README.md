@@ -54,9 +54,7 @@ python dune.py
 
 ---
 
-##  Build (Create Executable)
-
-If you want to build your own `.exe`:
+##  Build
 
 ### Requirements
 
@@ -91,8 +89,8 @@ The executable will be created inside the `dist/` folder.
 
 ##  Notes
 
-* Designed as a lightweight alternative to tools like `ncdu` for Windows
-* Uses content-based file type detection instead of file extensions
+* Designed as an alternative to tools like `ncdu` for Windows
+* Uses content-based file type detection using magic module instead of file extensions
 
 ---
 
