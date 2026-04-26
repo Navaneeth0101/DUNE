@@ -4,6 +4,16 @@ from ctypes import windll
 import string
 import magic
 
+class Node:
+    __slots__ = ("path", "size", "children", "isdir", "access")
+
+    def __init__(self, path, size, children, isdir, access):
+        self.path = path
+        self.size = size
+        self.children = children
+        self.isdir = isdir
+        self.access = access
+
 def unitconversion(x):
     units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"]
     for i in range(len(units)):
@@ -24,25 +34,32 @@ def get_drives():
 
 def scan(location):
     if os.access(location, os.R_OK):
-        if os.path.isfile(location):
-            node = {"path": location, "size": os.path.getsize(location), "children": [], "isdir": False, "access": True}
-            return node
-        else:
-            try:
-                children = os.listdir(location)
-            except:
-                return {"path": location, "size": 0, "children": [], "isdir": True, "access": False}
-            node = {"path": location, "children": [], "isdir": True, "access": True}
+            #node = ("path": location, "children": [], "isdir": True, "access": True)
+            node = Node(location, 0, [], True, True)
             dirsize = 0
-            for i in children:
-                child = scan(os.path.join(location, i))
-                node["children"].append(child)
-                dirsize += child["size"]
-            node["size"] = dirsize
+            try:
+                with os.scandir(location) as children:
+                    for child in children:
+                        if child.is_file():
+                            #childnode = {"path": child.path, "size": child.stat().st_size if os.access(child.path, os.R_OK) else 0, "children": [], "isdir": False, "access": os.access(child.path, os.R_OK)}
+                            try:
+                                childnode = Node(child.path, child.stat().st_size, [], False, True)
+                            except (PermissionError, OSError):
+                                childnode = Node(child.path, 0, [], False, False)
+                        else:
+                            childnode = scan(child.path)
+                        node.children.append(childnode)
+                        dirsize += childnode.size
+            except:
+                # return {"path": location, "size": 0, "children": [], "isdir": True, "access": False}
+                return Node(location, 0, [], True, False)
+            node.size = dirsize
             return node
             
     else:
-        return {"path": location, "size": 0, "children": [], "isdir": os.path.isdir(location), "access": False}
+        # return {"path": location, "size": 0, "children": [], "isdir": os.path.isdir(location), "access": False}
+        return Node(location, 0, [], True, False)
+        #THIS ASSUMES THAT EVERY NODE PASSED INTO SCAN FUNCTION IS A DIRECTORY NODE
 
 #schema for children
 """
@@ -59,21 +76,21 @@ def cleardisplay():
     print("\033[2J\033[1;1H")
 
 def chkvalue(x):
-    return x["size"]
+    return x.size
 
 def display(x):
     while True: 
         cleardisplay()
-        if not (x["isdir"]):
+        if not (x.isdir):
             print("="*10)
-            print(x["path"])
+            print(x.path)
             print("="*10 + "\n\n")
-            splitpath = os.path.split(x["path"])
+            splitpath = os.path.split(x.path)
             elementname = splitpath[-1] if splitpath[1] else splitpath[0][0]
             print("Name: "+elementname)
             try:
-                print("Type:",magic.from_file(x["path"], mime=True))
-                print("Details:",magic.from_file(x["path"]))
+                print("Type:",magic.from_file(x.path, mime=True))
+                print("Details:",magic.from_file(x.path))
             except:
                 print("Type: Error parsing")
                 print("Details: Error parsing")
@@ -81,22 +98,22 @@ def display(x):
             return
 
         print("="*10)
-        print(x["path"])
+        print(x.path)
         print("="*10 + "\n\n")
-        children = x["children"]
+        children = x.children
         children.sort(key= chkvalue, reverse= True)
         count = 1
         print("[0] [back] ...")
         max_len = 0
         max_num = len(str(len(children)))
         for child in children:
-            name = os.path.basename(child["path"])
+            name = os.path.basename(child.path)
             if len(name) > max_len:
                 max_len = len(name)
         for child in children:
-            splitpath = os.path.split(child["path"])
+            splitpath = os.path.split(child.path)
             elementname = splitpath[-1] if splitpath[1] else splitpath[0][0]
-            print(f"[{count:>{max_num}}] [{"D" if child["isdir"] else "F"}] {elementname:<{max_len}}         {unitconversion(child["size"]):>8} [{"ACCESSIBLE" if child["access"] else "INACCESSIBLE"}]" )
+            print(f"[{count:>{max_num}}] [{"D" if child.isdir else "F"}] {elementname:<{max_len}}         {unitconversion(child.size):>8} [{"ACCESSIBLE" if child.access else "INACCESSIBLE"}]" )
             count += 1
         print("="*10)
         while True:
