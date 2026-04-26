@@ -6,7 +6,7 @@ A fast CLI utility for disk usage analysis, directory navigation, and file metad
 
 ---
 
-##  Features
+## Features
 
 * Recursive disk scanning
 * Size-based sorting (largest first)
@@ -17,7 +17,7 @@ A fast CLI utility for disk usage analysis, directory navigation, and file metad
 
 ---
 
-##  Usage
+## Usage
 
 ###  Download
 
@@ -54,16 +54,18 @@ python dune.py
 
 ---
 
-##  Build
+## Build
 
 ### Requirements
 
-* PyInstaller
+* Python 3.x  
+* Nuitka (with onefile support)
 
 Install:
 
 ```bash
-pip install pyinstaller
+pip install "nuitka[onefile]"
+
 ```
 
 ---
@@ -71,14 +73,12 @@ pip install pyinstaller
 ### Build Command
 
 ```bash
-pyinstaller --onefile --console dune.py
+py -m nuitka --onefile --follow-imports --include-package=magic dune.py
 ```
-
-The executable will be created inside the `dist/` folder.
-
+The compiled executable (`dune.exe`) will be generated in the project directory.
 ---
 
-##  Example
+## Example
 
 ```
 [ 1] [D] Windows                 25.66 GB  [ACCESSIBLE]
@@ -87,7 +87,7 @@ The executable will be created inside the `dist/` folder.
 
 ---
 
-##  Notes
+## Notes
 
 * Designed as an alternative to tools like `ncdu` for Windows
 * Uses content-based file type detection using magic module instead of file extensions
